@@ -4,6 +4,8 @@ import pytest
 
 from libtexpr import (
     ArgumentError,
+    Block,
+    BlockIssueKind,
     DivisionByZeroError,
     DuplicateFunctionError,
     Engine,
@@ -349,3 +351,39 @@ def test_mixed_alphabets_in_one_placeholder() -> None:
 def test_other_alphabets_are_rejected(src: str) -> None:
     with pytest.raises(UnexpectedCharacterError):
         Placeholder.parse(src)
+
+
+# --- optional blocks ---
+
+
+def test_optional_block_kept_or_removed(w: SimpleNamespace) -> None:
+    key = fill(w, "{x}")
+    text = f"A{{ one [{key}] }}B{{ two [{key}] [{fill(w, '{y}')}] }}C"
+    data = {key: "v", fill(w, "{y}"): ""}
+    assert w.engine.render_blocks(text, data) == f"Aone [{key}]BC"
+    assert w.engine.render_text(text, data) == "Aone vBC"
+    assert w.engine.render_placeholders(text, data).count("{") == 2
+
+
+def test_optional_block_number_function_on_missing_field_is_empty(w: SimpleNamespace) -> None:
+    key = fill(w, "{x}")
+    assert w.engine.render_blocks(f"{{n [{key} + 1]}}", {}) == ""
+
+
+def test_optional_block_without_placeholder_or_broken_stays(w: SimpleNamespace) -> None:
+    assert w.engine.render_blocks("{plain} {[not valid !!]}", {}) == "{plain} [not valid !!]"
+
+
+def test_block_check() -> None:
+    def issues(text: str) -> list[tuple[BlockIssueKind, str]]:
+        return [(i.kind, i.text) for i in Block.check(text)]
+
+    assert issues("{a [X]} {b [Y]}") == []
+    assert issues("{plain}") == [(BlockIssueKind.EMPTY, "{plain}")]
+    assert issues("ok {a [X]") == [(BlockIssueKind.UNCLOSED, "{a [X]")]
+    assert issues("a [X]}") == [(BlockIssueKind.UNOPENED, "a [X]}")]
+    assert issues("{a {b [X]}}") == [(BlockIssueKind.NESTED, "{b [X]}}")]
+    assert issues("{a [X]\n[Y]}") == [
+        (BlockIssueKind.UNCLOSED, "{a [X]"),
+        (BlockIssueKind.UNOPENED, "[Y]}"),
+    ]

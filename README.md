@@ -1,6 +1,16 @@
 <div align="center">
    <h1><b>libtexpr</b></h1>
    <p><i>~ Placeholder expressions for templates ~</i></p>
+   <p align="center">
+      <a href="https://pypi.org/project/libtexpr/">PyPI</a> ·
+      <a href="https://github.com/StafLoker/libtexpr/releases">Releases</a>
+   </p>
+</div>
+
+<div align="center">
+   <a href="https://pypi.org/project/libtexpr/"><img src="https://img.shields.io/pypi/v/libtexpr.svg?style=flat" alt="latest version"/></a>
+   <a href="https://pypi.org/project/libtexpr/"><img src="https://img.shields.io/pypi/pyversions/libtexpr.svg?style=flat" alt="python versions"/></a>
+   <a href="https://github.com/StafLoker/libtexpr/blob/main/LICENSE"><img src="https://img.shields.io/github/license/StafLoker/libtexpr.svg?style=flat" alt="license"/></a>
 </div>
 
 libtexpr is a Python library that parses and evaluates placeholders such as `[ДОЛГ.СУММА * 2 | деньги: кратко]` or `[DEBT.AMOUNT * 2 | money: short]`. It is for applications that fill data into document templates and let template authors write fields and functions in their own language: Cyrillic or Latin.
@@ -84,6 +94,15 @@ Rules:
 - Arithmetic (`+ - * /`) is allowed only in the value, before the first function: the result of a function cannot go back into arithmetic. Compute first, then apply functions: `[А.Б * 2 | округлить: 1]`.
 - In the template text the decimal part is written with a dot (`0.5`), because a comma separates arguments. In data a comma is accepted: `"1 000,5"`.
 - There are no quoted strings, conditions, loops or nested calls `f(g(x))`: use the chain `x | g | f` instead.
+
+### Optional blocks
+
+Text in braces is kept only when every placeholder inside has a value: `{Passport: [DEBTOR.PASSPORT]}`.
+
+- If any placeholder inside is empty, the whole block is removed, label included; otherwise it stays without the braces.
+- Three functions: `Engine.render_blocks(text, data)` settles only the blocks, `Engine.render_placeholders(text, data)` replaces only the `[...]`, and `Engine.render_text(text, data)` does both.
+- A missing value where a number or a date is needed counts as empty. A placeholder that does not parse never counts as empty.
+- A block holds at least one placeholder, does not nest and does not span lines. `Block.check(text)` lists what breaks these rules, each as a `BlockIssue(kind, text)`: the kind is `UNCLOSED`, `UNOPENED`, `EMPTY` or `NESTED` (`BlockIssueKind`), the text is the piece it is about as written. `render_blocks` leaves such text as written.
 
 A syntax error is a `ParseError` carrying the character position: `UnexpectedCharacterError` (for example `$` or a Greek letter), `UnexpectedTokenError` (for example an unclosed parenthesis), `InvalidNumberError`, `LimitExceededError`.
 

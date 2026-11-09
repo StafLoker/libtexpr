@@ -30,10 +30,13 @@ from libtexpr.errors import (
     UnexpectedTokenError,
     UnknownFunctionError,
 )
-from libtexpr.syntax import Placeholder
+from libtexpr.syntax import Block, BlockIssue, BlockIssueKind, Placeholder
 
 __all__ = [
     "ArgumentError",
+    "Block",
+    "BlockIssue",
+    "BlockIssueKind",
     "DivisionByZeroError",
     "DuplicateFunctionError",
     "Engine",
