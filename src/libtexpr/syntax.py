@@ -113,6 +113,69 @@ class Placeholder:
         return Placeholder.PATTERN.findall(text)
 
 
+# --- Block ---
+
+
+class BlockIssueKind(Enum):
+    UNCLOSED = auto()
+    UNOPENED = auto()
+    EMPTY = auto()
+    NESTED = auto()
+
+
+@dataclass(frozen=True, slots=True)
+class BlockIssue:
+    """One badly formed ``{...}`` block found by :meth:`Block.check`, with the text it is about as written."""
+
+    kind: BlockIssueKind
+    text: str
+
+
+class Block:
+    """The optional ``{...}`` blocks of a template text.
+
+    ``PATTERN`` matches one block (group 1 is the text inside the braces). A block holds at least one
+    placeholder, closes on its own line and does not hold another block; a line stands for a paragraph,
+    so a block never reaches across two.
+    """
+
+    PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"\{([^{}\n]*)\}")
+
+    # Longest piece of text an issue quotes.
+    QUOTE: ClassVar[int] = 60
+
+    @staticmethod
+    def check(text: str) -> list[BlockIssue]:
+        """Every badly formed block of ``text``; an empty list means all are well formed."""
+        issues: list[BlockIssue] = []
+
+        for line in text.split("\n"):
+            depth = 0
+            start = 0
+            for i, ch in enumerate(line):
+                if ch == "{":
+                    if depth == 0:
+                        start = i
+                    else:
+                        issues.append(BlockIssue(BlockIssueKind.NESTED, line[i : i + Block.QUOTE]))
+                    depth += 1
+                elif ch == "}" and depth == 0:
+                    issues.append(
+                        BlockIssue(
+                            BlockIssueKind.UNOPENED, line[max(0, i + 1 - Block.QUOTE) : i + 1]
+                        )
+                    )
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0 and not Placeholder.PATTERN.search(line[start : i + 1]):
+                        issues.append(BlockIssue(BlockIssueKind.EMPTY, line[start : i + 1]))
+            if depth > 0:
+                issues.append(
+                    BlockIssue(BlockIssueKind.UNCLOSED, line[start : start + Block.QUOTE])
+                )
+        return issues
+
+
 # --- Characters ---
 
 

@@ -18,6 +18,7 @@ from libtexpr.errors import (
 )
 from libtexpr.syntax import (
     BinOp,
+    Block,
     Call,
     Node,
     Placeholder,
@@ -312,8 +313,26 @@ class Engine:
             value = self._call(call, value, data)
         return str(FieldType.TEXT._coerce(value))
 
-    def render_text(self, text: str, data: Mapping[str, str]) -> str:
-        """Replace every ``[...]`` in ``text`` with its value for ``data``.
+    def render_blocks(self, text: str, data: Mapping[str, str]) -> str:
+        """Settle every ``{...}`` block of ``text`` for ``data``; the ``[...]`` are not evaluated.
+
+        A block with an empty placeholder is removed whole; otherwise it is kept without its braces and
+        trimmed. A value that a number or a date function cannot read, because it is missing, counts as
+        empty. A placeholder that does not parse never counts as empty, and a block without any
+        placeholder stays exactly as written.
+        """
+
+        def settle(block: re.Match[str]) -> str:
+            marks = Placeholder.extract(block.group(1))
+            result = block.group(1).strip() if marks else block.group(0)
+            if any(self._is_empty(mark, data) for mark in marks):
+                result = ""
+            return result
+
+        return Block.PATTERN.sub(settle, text)
+
+    def render_placeholders(self, text: str, data: Mapping[str, str]) -> str:
+        """Replace every ``[...]`` in ``text`` with its value for ``data``; ``{...}`` blocks are not touched.
 
         A placeholder that fails to parse or evaluate is left exactly as written.
         """
@@ -326,6 +345,19 @@ class Engine:
             return result
 
         return Placeholder.PATTERN.sub(replace, text)
+
+    def render_text(self, text: str, data: Mapping[str, str]) -> str:
+        """Both steps: :meth:`render_blocks`, then :meth:`render_placeholders`."""
+        return self.render_placeholders(self.render_blocks(text, data), data)
+
+    def _is_empty(self, mark: str, data: Mapping[str, str]) -> bool:
+        try:
+            result = self.evaluate(Placeholder.parse(mark), data) == ""
+        except (NotNumericError, NotDateError):
+            result = True
+        except TexprError:
+            result = False
+        return result
 
     def _call(self, call: Call, value: Value, data: Mapping[str, str]) -> Value:
         fn = self._functions.get(call.name)

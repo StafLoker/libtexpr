@@ -85,6 +85,15 @@ Rules:
 - In the template text the decimal part is written with a dot (`0.5`), because a comma separates arguments. In data a comma is accepted: `"1 000,5"`.
 - There are no quoted strings, conditions, loops or nested calls `f(g(x))`: use the chain `x | g | f` instead.
 
+### Optional blocks
+
+Text in braces is kept only when every placeholder inside has a value: `{Passport: [DEBTOR.PASSPORT]}`.
+
+- If any placeholder inside is empty, the whole block is removed, label included; otherwise it stays without the braces.
+- Three functions: `Engine.render_blocks(text, data)` settles only the blocks, `Engine.render_placeholders(text, data)` replaces only the `[...]`, and `Engine.render_text(text, data)` does both.
+- A missing value where a number or a date is needed counts as empty. A placeholder that does not parse never counts as empty.
+- A block holds at least one placeholder, does not nest and does not span lines. `Block.check(text)` lists what breaks these rules, each as a `BlockIssue(kind, text)`: the kind is `UNCLOSED`, `UNOPENED`, `EMPTY` or `NESTED` (`BlockIssueKind`), the text is the piece it is about as written. `render_blocks` leaves such text as written.
+
 A syntax error is a `ParseError` carrying the character position: `UnexpectedCharacterError` (for example `$` or a Greek letter), `UnexpectedTokenError` (for example an unclosed parenthesis), `InvalidNumberError`, `LimitExceededError`.
 
 ## Functions and types
