@@ -1,6 +1,16 @@
 <div align="center">
    <h1><b>libtexpr</b></h1>
    <p><i>~ Placeholder expressions for templates ~</i></p>
+   <p align="center">
+      <a href="https://pypi.org/project/libtexpr/">PyPI</a> ·
+      <a href="https://github.com/StafLoker/libtexpr/releases">Releases</a>
+   </p>
+</div>
+
+<div align="center">
+   <a href="https://pypi.org/project/libtexpr/"><img src="https://img.shields.io/pypi/v/libtexpr.svg?style=flat" alt="latest version"/></a>
+   <a href="https://pypi.org/project/libtexpr/"><img src="https://img.shields.io/pypi/pyversions/libtexpr.svg?style=flat" alt="python versions"/></a>
+   <a href="https://github.com/StafLoker/libtexpr/blob/main/LICENSE"><img src="https://img.shields.io/github/license/StafLoker/libtexpr.svg?style=flat" alt="license"/></a>
 </div>
 
 libtexpr is a Python library that parses and evaluates placeholders such as `[ДОЛГ.СУММА * 2 | деньги: кратко]` or `[DEBT.AMOUNT * 2 | money: short]`. It is for applications that fill data into document templates and let template authors write fields and functions in their own language: Cyrillic or Latin.
