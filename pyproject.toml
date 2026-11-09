@@ -1,6 +1,6 @@
 [project]
 name = "libtexpr"
-version = "0.1.0"
+version = "0.2.0"
 description = "Placeholder expression engine for templates: [FIELD + 1 | function: arg] in Cyrillic or Latin"
 readme = "README.md"
 license = "Apache-2.0"
